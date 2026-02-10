@@ -1,6 +1,6 @@
 # 🎵 MusicStreaming – Microservices Project
 
-Proyecto backend basado en arquitectura de microservicios desarrollado con Spring Boot,
+Proyecto basado en arquitectura de microservicios desarrollado con Spring Boot,
 que modela un sistema sencillo de music streaming con gestión de usuarios y artistas.
 
 El objetivo del proyecto es aplicar buenas prácticas de:
