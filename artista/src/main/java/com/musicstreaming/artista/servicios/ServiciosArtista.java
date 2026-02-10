@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.web.bind.annotation.PathVariable;
 
-
+import com.musicstreaming.artista.common.ArtistRequestMapper;
+import com.musicstreaming.artista.common.ArtistResponseMapper;
+import com.musicstreaming.artista.dto.ArtistRequest;
+import com.musicstreaming.artista.dto.ArtistResponse;
 import com.musicstreaming.artista.entities.Artista;
 import com.musicstreaming.artista.repository.ArtistaRepository;
 
@@ -20,42 +23,68 @@ public class ServiciosArtista {
     @Autowired // para utilizar metodos de artistaRepository
     ArtistaRepository artistaRepository;
 
+    @Autowired
+    ArtistRequestMapper artistRequestMapper; 
+    
+    @Autowired
+    ArtistResponseMapper artistResponseMapper; 
 
     public ResponseEntity<?> findAll() {
-        List<Artista> users = artistaRepository.findAll();
+        List<Artista> artistas = artistaRepository.findAll();
 
-        if(users.isEmpty()){
+        List<ArtistResponse> artistaseResponses = artistResponseMapper.listtoList(artistas); 
+
+        if(artistaseResponses.isEmpty()){
             return ResponseEntity.noContent().build(); 
         }
-        return ResponseEntity.ok(users); 
+        return ResponseEntity.ok(artistaseResponses); 
     }
+
 
     public ResponseEntity<?> getbyId(long id) {
         Optional<Artista> find = artistaRepository.findById(id); 
+         
         if( find.isPresent()){
-            return ResponseEntity.ok(find); 
+            ArtistResponse response = artistResponseMapper.ArtistToArtistaResponse(find.get()); 
+            return ResponseEntity.ok(response); 
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); 
     }
 
 
-    public ResponseEntity<Artista> postArtista(Artista input) {
-        Artista artista = artistaRepository.save(input);
-        return ResponseEntity.status(HttpStatus.CREATED).body(artista);
+    public ResponseEntity<Artista> postArtista(ArtistRequest input) {
+        Artista artista = artistRequestMapper.ArtistRequestToArtista(input); 
+        Artista save = artistaRepository.save(artista);
+        return ResponseEntity.status(HttpStatus.CREATED).body(save);
     }
 
     
-    public ResponseEntity<Artista> updateArtista(Long id, Artista inputArtista) {
+    public ResponseEntity<?> updateArtista(Long id, ArtistRequest inputArtista) {
 
-        return artistaRepository.findById(id).map(artista -> {
-                    artista.setNombre(inputArtista.getNombre());
-                    artista.setPhone(inputArtista.getPhone());
+        Optional<Artista> artistaOpt = artistaRepository.findById(id);
 
-                    Artista updated = artistaRepository.saveAndFlush(artista);
-                    return ResponseEntity.ok(updated);
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
+        if (artistaOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        Artista artista = artistaOpt.get();
+
+        
+        Artista input = artistRequestMapper.ArtistRequestToArtista(inputArtista);
+
+        // Actualizar campos
+        artista.setNombre(input.getNombre());
+        artista.setPhone(input.getPhone());
+        artista.setNombreArtistico(input.getNombreArtistico());
+        artista.setDni(input.getDni());
+
+        // Guardar cambios
+        Artista actualizado = artistaRepository.save(artista);
+        ArtistResponse save = artistResponseMapper.ArtistToArtistaResponse(actualizado); 
+
+    return ResponseEntity.ok(save);
+}
+
 
 
     public ResponseEntity<?> deleteArtista(@PathVariable Long id) {

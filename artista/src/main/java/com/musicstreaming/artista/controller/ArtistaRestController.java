@@ -1,5 +1,6 @@
 package com.musicstreaming.artista.controller;
 
+
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -7,9 +8,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
+import com.musicstreaming.artista.dto.ArtistRequest;
+
 import com.musicstreaming.artista.entities.Artista;
 
 import com.musicstreaming.artista.servicios.ServiciosArtista;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+@Tag(name= "Artista API")
 @RestController
 @RequestMapping("/artista")
 public class ArtistaRestController {
@@ -28,6 +35,7 @@ public class ArtistaRestController {
         this.serviciosArtista = serviciosArtista;
     }
     
+    @Operation(summary = "devuelve todos los artistas")
     @GetMapping("/findAll")
     public ResponseEntity<?> findAll() {
         return serviciosArtista.findAll(); 
@@ -40,12 +48,12 @@ public class ArtistaRestController {
     
 
     @PostMapping("/añadir")
-    public ResponseEntity<Artista> postArtista(@RequestBody Artista input) {
+    public ResponseEntity<Artista> postArtista(@RequestBody ArtistRequest input) {
         return serviciosArtista.postArtista(input); 
     }
 
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<Artista> updateArtista(@PathVariable Long id, @RequestBody Artista inputArtista) {
+    public ResponseEntity<?> updateArtista(@PathVariable Long id, @RequestBody ArtistRequest inputArtista) {
         return serviciosArtista.updateArtista(id, inputArtista); 
     }
 
