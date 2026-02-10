@@ -27,6 +27,7 @@ public class UserArtist {
     private String nombreArtista; 
 
     @JsonIgnore
+    //muchos UserArtist -> un user, ya que un user puede tener muchos artistas
     @ManyToOne(fetch = FetchType.LAZY, targetEntity = User.class)
     @JoinColumn(name = "user_id", nullable = true)
     private User user; 

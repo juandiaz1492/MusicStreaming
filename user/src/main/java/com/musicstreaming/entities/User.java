@@ -22,8 +22,7 @@ public class User {
     private Long id; 
     private String name; 
     private String phone; 
-    private String password; 
-    //@Column(nullable = false, unique = true) //para que no puede ser null y sea único 
+    private String password;  
     private String dni; 
 
     //1 usuario -> muchos artistas
