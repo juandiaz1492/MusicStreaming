@@ -1,0 +1,132 @@
+package com.musicstreaming.artista.servicios;
+
+import java.sql.Date;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.musicstreaming.artista.dto.AlbumRequest;
+import com.musicstreaming.artista.dto.AlbumResponse;
+import com.musicstreaming.artista.entities.Album;
+import com.musicstreaming.artista.entities.Artista;
+import com.musicstreaming.artista.mapper.AlbumRequestMapper;
+import com.musicstreaming.artista.mapper.AlbumResponseMapper;
+import com.musicstreaming.artista.repository.AlbumRepository;
+import com.musicstreaming.artista.repository.ArtistaRepository;
+
+@Service
+public class ServiciosAlbum {
+
+    private final AlbumRepository albumRepository;
+    private final AlbumRequestMapper albumRequestMapper;
+    private final AlbumResponseMapper albumResponseMapper;
+    private final ArtistaRepository artistaRepository; 
+
+    public ServiciosAlbum(AlbumRepository albumRepository,
+                          AlbumRequestMapper albumRequestMapper,
+                          AlbumResponseMapper albumResponseMapper,
+                          ArtistaRepository artistaRepository) {
+        this.albumRepository = albumRepository;
+        this.artistaRepository = artistaRepository;
+        this.albumRequestMapper = albumRequestMapper;
+        this.albumResponseMapper = albumResponseMapper;
+    }
+
+    //find all
+    public ResponseEntity<?> findAll() {
+
+        List<Album> albums = albumRepository.findAll();
+        List<AlbumResponse> responses = albumResponseMapper.listAlbumToListAlbumResponse(albums); 
+
+        if (responses.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(responses);
+    }
+
+    //getby id
+    public ResponseEntity<?> getbyId(Long id) {
+
+        Optional<Album> albumOpt = albumRepository.findById(id);
+
+        if (albumOpt.isPresent()) {
+            AlbumResponse response = albumResponseMapper.toResponse(albumOpt.get());
+            response.setFechaCreacion(albumOpt.get().getFechaCreacion().toString());
+            return ResponseEntity.ok(response);
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    //post create
+    public ResponseEntity<AlbumResponse> postAlbum(AlbumRequest input) {
+        //comprobar que el artista existe
+        Optional<Artista> artistaOpt = artistaRepository.findById(input.getIdArtista());
+
+        if (artistaOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            //CREAR EXCEPCION AQUI 
+        }
+
+        Album album = albumRequestMapper.toEntity(input);
+
+        album.setArtistaAlbum(artistaOpt.get());
+        album.setFechaCreacion(Date.valueOf(input.getFechaCreacion()));
+
+        Album saved = albumRepository.save(album);
+
+        AlbumResponse response = albumResponseMapper.toResponse(saved);
+        response.setFechaCreacion(saved.getFechaCreacion().toString());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    //update
+    public ResponseEntity<?> updateAlbum(Long id, AlbumRequest inputAlbum) {
+        
+        Optional<Album> albumOpt = albumRepository.findById(id);
+
+        if (albumOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        Optional<Artista> artistaOpt = artistaRepository.findById(inputAlbum.getIdArtista());
+
+        if (artistaOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        Album album = albumOpt.get();
+
+        Album input = albumRequestMapper.toEntity(inputAlbum);
+
+        album.setNombre(input.getNombre());
+        album.setPrecio(input.getPrecio());
+        album.setFechaCreacion(Date.valueOf(inputAlbum.getFechaCreacion()));
+        album.setArtistaAlbum(artistaOpt.get());
+
+        Album actualizado = albumRepository.save(album);
+
+        AlbumResponse response = albumResponseMapper.toResponse(actualizado);
+        response.setFechaCreacion(actualizado.getFechaCreacion().toString());
+
+        return ResponseEntity.ok(response);
+    }
+
+    //delete
+    public ResponseEntity<?> deleteAlbum(Long id) {
+
+        Album album = albumRepository.findById(id).orElse(null);
+
+        if (album != null) {
+            albumRepository.delete(album);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+}

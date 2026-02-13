@@ -1,104 +1,108 @@
 package com.musicstreaming.servicios;
 
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+
 import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import com.musicstreaming.dto.ArtistResponse;
+import com.musicstreaming.dto.UserRequest;
+import com.musicstreaming.dto.UserResponse;
 import com.musicstreaming.entities.User;
-import com.musicstreaming.entities.UserArtist;
+
+import com.musicstreaming.mapper.UserRequestMapper;
+import com.musicstreaming.mapper.UserResponseMapper;
 import com.musicstreaming.respository.UserRepository;
 
-import io.netty.channel.ChannelOption;
-import io.netty.channel.epoll.EpollChannelOption;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutHandler;
 
-import reactor.netty.http.client.HttpClient;
 
 @Service
 public class ServiciosControladorUser {
     @Autowired
     UserRepository userRepository;
-    
-    private WebClient.Builder webClientBuilder; 
+    private final UserResponseMapper userResponseMapper; 
+    private final UserRequestMapper userRequestMapper; 
+    private final RestClient restClient;
 
-    public ServiciosControladorUser(WebClient.Builder webClientBuilder) {
-        this.webClientBuilder = webClientBuilder;
+    @Value("${artista.service.url}")
+    private String artistaServiceUrl;
+
+
+
+    public ServiciosControladorUser(UserResponseMapper userResponseMapper, UserRequestMapper userRequestMapper,RestClient restClient) {
+        this.userRequestMapper = userRequestMapper; 
+        this.userResponseMapper = userResponseMapper; 
+        this.restClient = restClient; 
     }
   
-    
-
-    // WebClient requires HttpClient library to work properly
-    HttpClient client = HttpClient.create()
-        // Connection Timeout: is a period within which a connection between a client and a server must be established
-        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-        .option(ChannelOption.SO_KEEPALIVE, true)
-        .option(EpollChannelOption.TCP_KEEPIDLE, 300)
-        .option(EpollChannelOption.TCP_KEEPINTVL, 60)
-        // Response Timeout: The maximum time we wait to receive a response after sending a request
-        .responseTimeout(Duration.ofSeconds(1))
-        // Read and Write Timeout: A read timeout occurs when no data was read within a certain
-        // period of time, while the write timeout when a write operation cannot finish at a specific time
-        .doOnConnected(connection -> {
-            connection.addHandlerLast(new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS));
-            connection.addHandlerLast(new WriteTimeoutHandler(5000, TimeUnit.MILLISECONDS));
-        });
-
 
     //get all
-    public ResponseEntity<?> findAll() {
+    public ResponseEntity<List<UserResponse>> findAll() {
         List<User> users = userRepository.findAll();
 
         if(users.isEmpty()){
             return ResponseEntity.noContent().build(); 
         }
-        return ResponseEntity.ok(users); 
+
+        List<UserResponse> response = userResponseMapper.toListUserResponse(users); 
+
+       
+        return ResponseEntity.ok(response); 
     }
 
     // get {id}
-    public ResponseEntity<?> getbyId(long id) {
+    public ResponseEntity<UserResponse> getbyId(long id) {
         Optional<User> find = userRepository.findById(id); 
-        if( find.isPresent()){
-            return ResponseEntity.ok(find); 
+        
+        if(find.isEmpty()){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); 
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); 
+
+        UserResponse response = userResponseMapper.toUserResonse(find.get()); 
+
+        return ResponseEntity.ok(response); 
     }
 
-
     //añadir
-    public ResponseEntity<User> postUser(User input) {
-        if (input.getArtistas() != null) {
-            input.getArtistas().forEach(ua -> ua.setUser(input));
-        }
-        User saved = userRepository.save(input);
-    return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    public ResponseEntity<UserResponse> postUser(UserRequest input) {
+        User usersave = userRequestMapper.UserRequestToUser(input);
+        User save = userRepository.save(usersave);
+        UserResponse responde = userResponseMapper.toUserResonse(save); 
+
+    return ResponseEntity.status(HttpStatus.CREATED).body(responde);
     }     
 
     //update {id}
-    public ResponseEntity<User> updateUser(Long id, User inputUser) {
-        return userRepository.findById(id).map(user -> {
-                    user.setName(inputUser.getName());
-                    user.setPhone(inputUser.getPhone());
-                    user.setPassword(inputUser.getPassword());
-                    user.setDni(inputUser.getDni());
+    public ResponseEntity<?> updateUser(Long id, UserRequest inputUser) {
+        Optional<User> userOpt = userRepository.findById(id);
 
-                    User updated = userRepository.saveAndFlush(user);
-                    return ResponseEntity.ok(updated);
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        User user = userOpt.get();
+
+        User input = userRequestMapper.UserRequestToUser(inputUser);
+
+        user.setName(input.getName());
+        user.setDni(input.getDni());
+        user.setPhone(input.getPhone());
+        user.setPassword(input.getPassword());
+
+        User actualizado = userRepository.save(user);
+
+        UserResponse response = userResponseMapper.toUserResonse(actualizado); 
+
+        return ResponseEntity.ok(response);
     }
 
 
@@ -116,7 +120,18 @@ public class ServiciosControladorUser {
         }
     }
 
+    // get /username{username}
+    public ResponseEntity<?> getbyNombreUser(String username) {
+        Optional<User> find = userRepository.findByname(username);  
+        if( find.isPresent()){
+            return ResponseEntity.ok(find); 
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); 
+    }
+
     //get full
+    //falta tocar esto
+    /* 
     public ResponseEntity<User> getByDni(String code) {
         User user = userRepository.findByDni(code);
         if (user != null) {
@@ -128,6 +143,7 @@ public class ServiciosControladorUser {
         }
         return ResponseEntity.ok(user); 
     }
+        
 
     //recibo un ID del artista
     private String getArtistaName(long id){
@@ -150,6 +166,26 @@ public class ServiciosControladorUser {
         }
     return block.get("nombre").asText();
     }
+    */ 
 
+
+    public ResponseEntity<?> getArtistsOfUser(Long userId) {
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        String username = user.getName(); 
+
+        ArtistResponse[] artistas = restClient.get()
+            .uri(artistaServiceUrl + "/artista/by-user/{username}", username)
+            .retrieve()
+            .body(ArtistResponse[].class);
+
+        if (artistas == null || artistas.length == 0) {
+        return ResponseEntity.noContent().build();
+        }
+
+    return ResponseEntity.ok(List.of(artistas));
+  }
 
 }

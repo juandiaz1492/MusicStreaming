@@ -1,13 +1,14 @@
-package com.musicstreaming.exceptions;
+package com.musicstreaming.artista.exceptions; 
+
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.musicstreaming.common.StandarExceptionResponse;
+
+import com.musicstreaming.artista.common.StandarExceptionResponse;
 
 //manejador de excepciones
 
@@ -19,8 +20,23 @@ public class ApiExceptionsHandler {
         StandarExceptionResponse standarExceptionResponse = new StandarExceptionResponse("tecnico", "input ouptur error", 124, "exception"); 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(standarExceptionResponse); 
     }
-    
-    //para tratar duplicidad en User(dni,nombre)
+    /* 
+    @ExceptionHandler(WebClientResponseException.NotFound.class)
+    public ResponseEntity<StandarExceptionResponse> handleUserNotFound(WebClientResponseException.NotFound ex) {
+
+        StandarExceptionResponse response = new StandarExceptionResponse(
+            "/errors/user/not-found",
+            "User not found",
+            2345,
+            "El usuario no existe"
+        );
+        response.setInstance("/errors/user/not-found/01");
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+       }
+       */
+
+    //para tratar duplicidad en Artista(nombre)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<StandarExceptionResponse> handleDuplicate(DataIntegrityViolationException ex) {
 

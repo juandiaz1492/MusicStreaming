@@ -47,7 +47,7 @@ public class ArtistaRestController {
     }
     
 
-    @PostMapping("/añadir")
+    @PostMapping("/anadir")
     public ResponseEntity<Artista> postArtista(@RequestBody ArtistRequest input) {
         return serviciosArtista.postArtista(input); 
     }
@@ -62,6 +62,10 @@ public class ArtistaRestController {
         return serviciosArtista.deleteArtista(id);
     }
 
+    @GetMapping("/by-user/{username}")
+    public ResponseEntity<?> getByUser(@PathVariable String username) {
+    return serviciosArtista.getByUser(username);
+    }
 
 
 
