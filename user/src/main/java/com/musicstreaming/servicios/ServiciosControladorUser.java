@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -32,16 +34,18 @@ public class ServiciosControladorUser {
     private final UserResponseMapper userResponseMapper; 
     private final UserRequestMapper userRequestMapper; 
     private final RestClient restClient;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${artista.service.url}")
     private String artistaServiceUrl;
 
 
 
-    public ServiciosControladorUser(UserResponseMapper userResponseMapper, UserRequestMapper userRequestMapper,RestClient restClient) {
+    public ServiciosControladorUser(UserResponseMapper userResponseMapper, UserRequestMapper userRequestMapper,RestClient restClient, PasswordEncoder passwordEncoder) {
         this.userRequestMapper = userRequestMapper; 
         this.userResponseMapper = userResponseMapper; 
         this.restClient = restClient; 
+        this.passwordEncoder = passwordEncoder; 
     }
   
 
@@ -73,13 +77,21 @@ public class ServiciosControladorUser {
     }
 
     //añadir
-    public ResponseEntity<UserResponse> postUser(UserRequest input) {
-        User usersave = userRequestMapper.UserRequestToUser(input);
-        User save = userRepository.save(usersave);
-        UserResponse responde = userResponseMapper.toUserResonse(save); 
+    // añadir
+public ResponseEntity<UserResponse> postUser(UserRequest input) {
 
-    return ResponseEntity.status(HttpStatus.CREATED).body(responde);
-    }     
+    User usersave = userRequestMapper.UserRequestToUser(input);
+
+    String passwordHasheada = passwordEncoder.encode(usersave.getPassword());
+    usersave.setPassword(passwordHasheada);
+
+    User save = userRepository.save(usersave);
+
+    UserResponse response = userResponseMapper.toUserResonse(save);
+
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+}
+
 
     //update {id}
     public ResponseEntity<?> updateUser(Long id, UserRequest inputUser) {

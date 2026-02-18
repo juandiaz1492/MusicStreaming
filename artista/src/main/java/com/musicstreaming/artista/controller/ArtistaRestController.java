@@ -9,13 +9,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 import com.musicstreaming.artista.dto.ArtistRequest;
-
-import com.musicstreaming.artista.entities.Artista;
-
 import com.musicstreaming.artista.servicios.ServiciosArtista;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,15 +43,14 @@ public class ArtistaRestController {
     public ResponseEntity<?> getbyId(@PathVariable long id) {
         return serviciosArtista.getbyId(id); 
     }
-    
 
     @PostMapping("/anadir")
-    public ResponseEntity<Artista> postArtista(@RequestBody ArtistRequest input) {
+    public ResponseEntity<?> postArtista(@Valid @RequestBody ArtistRequest input) {
         return serviciosArtista.postArtista(input); 
     }
 
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<?> updateArtista(@PathVariable Long id, @RequestBody ArtistRequest inputArtista) {
+    public ResponseEntity<?> updateArtista(@PathVariable Long id, @Valid @RequestBody ArtistRequest inputArtista) {
         return serviciosArtista.updateArtista(id, inputArtista); 
     }
 

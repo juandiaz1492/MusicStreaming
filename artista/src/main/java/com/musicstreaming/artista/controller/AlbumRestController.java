@@ -10,6 +10,7 @@ import com.musicstreaming.artista.servicios.ServiciosAlbum;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @Tag(name = "Album API")
 @RestController
@@ -34,12 +35,12 @@ public class AlbumRestController {
     }
 
     @PostMapping("/anadir")
-    public ResponseEntity<?> postAlbum(@RequestBody AlbumRequest input) {
+    public ResponseEntity<?> postAlbum(@Valid @RequestBody AlbumRequest input) {
         return serviciosAlbum.postAlbum(input);
     }
 
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<?> updateAlbum(@PathVariable Long id, @RequestBody AlbumRequest inputAlbum) {
+    public ResponseEntity<?> updateAlbum(@PathVariable Long id, @Valid @RequestBody AlbumRequest inputAlbum) {
         return serviciosAlbum.updateAlbum(id, inputAlbum);
     }
 

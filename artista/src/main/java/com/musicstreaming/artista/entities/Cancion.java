@@ -8,13 +8,10 @@ import java.util.Set;
 
 @Entity
 @Data
-@Table(
-    name = "canciones",
-    uniqueConstraints = {
+@Table(name = "canciones", uniqueConstraints = {
         @UniqueConstraint(name = "uk_songs_title", columnNames = "title"),
         @UniqueConstraint(name = "uk_songs_url", columnNames = "url")
-    }
-)
+})
 public class Cancion {
 
     @Id
@@ -29,16 +26,20 @@ public class Cancion {
     @Column(unique = true)
     private String url;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "album_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "album_id", nullable = true)
     private Album album;
 
-    // Muchos artistas
+    //eliminar cancion no elimina artista
+    @Column(nullable = false)
     @ManyToMany
-    @JoinTable(
-        name = "song_artists",
-        joinColumns = @JoinColumn(name = "song_id"),
-        inverseJoinColumns = @JoinColumn(name = "artist_id")
-    )
+    @JoinTable(name = "song_artists", joinColumns = @JoinColumn(name = "song_id"), inverseJoinColumns = @JoinColumn(name = "artist_id"))
     private Set<Artista> artistas = new HashSet<>();
+
+    //eliminar cancion no elimina generos 
+    @Column(nullable = false)
+    @ManyToMany
+    @JoinTable(name = "song_genres", joinColumns = @JoinColumn(name = "song_id"), inverseJoinColumns = @JoinColumn(name = "genero_id"))
+    private Set<Genero> generos = new HashSet<>();
+
 }

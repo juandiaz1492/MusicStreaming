@@ -1,13 +1,18 @@
 package com.musicstreaming.artista.exceptions; 
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.musicstreaming.artista.common.StandarExceptionResponse;
 
 //manejador de excepciones
@@ -44,9 +49,51 @@ public class ApiExceptionsHandler {
                 "/errors/user/duplicate",
                 "Duplicate user",
                 409,
-                "Ya existe un usuario con ese DNI o con ese nombre"
+                "Ya existe un artista con ese nombre"
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
+
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> handleJsonParse(HttpMessageNotReadableException ex) {
+
+        Throwable cause = ex.getCause();
+        if (cause instanceof InvalidFormatException ife) {
+            String field = ife.getPath().isEmpty() ? "body" : ife.getPath().get(0).getFieldName();
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", "BAD_REQUEST",
+                    "message", "Formato inválido en '" + field + "'. Usa yyyy-MM-dd",
+                    "value", String.valueOf(ife.getValue())
+            ));
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "error", "BAD_REQUEST",
+                "message", "JSON inválido o mal formado"
+        ));
+    }
+
+
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+
+    Map<String, String> errors = new HashMap<>();
+
+    ex.getBindingResult().getFieldErrors().forEach(error ->
+        errors.put(error.getField(), error.getDefaultMessage())
+    );
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("type", "validation");
+    body.put("title", "Validation error");
+    body.put("code", 400);
+    body.put("errors", errors);
+
+    return ResponseEntity.badRequest().body(body);
+}
+
 }

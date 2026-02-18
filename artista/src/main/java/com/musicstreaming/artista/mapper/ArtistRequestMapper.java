@@ -13,5 +13,6 @@ public interface ArtistRequestMapper {
    
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "albums", ignore = true)
+    @Mapping(target = "canciones", ignore = true)
     Artista artistaRequestToArtista(ArtistRequest artistRequest); 
 }

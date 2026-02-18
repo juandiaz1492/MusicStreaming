@@ -10,6 +10,7 @@ import com.musicstreaming.artista.servicios.ServiciosCancion;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @Tag(name = "Cancion API")
 @RestController
@@ -34,12 +35,12 @@ public class CancionRestController {
     }
 
     @PostMapping("/anadir")
-    public ResponseEntity<?> postCancion(@RequestBody CancionRequest input) {
+    public ResponseEntity<?> postCancion(@Valid @RequestBody CancionRequest input) {
         return serviciosCancion.postCancion(input);
     }
 
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<?> updateCancion(@PathVariable Long id, @RequestBody CancionRequest inputCancion) {
+    public ResponseEntity<?> updateCancion(@PathVariable Long id, @Valid @RequestBody CancionRequest inputCancion) {
         return serviciosCancion.updateCancion(id, inputCancion);
     }
 

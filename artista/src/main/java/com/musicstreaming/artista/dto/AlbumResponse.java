@@ -1,5 +1,7 @@
 package com.musicstreaming.artista.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import lombok.Data;
@@ -31,6 +33,7 @@ public class AlbumResponse {
             example = "2025-02-12",
             description = "Fecha de creación/publicación del álbum (yyyy-MM-dd)"
     )
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private String fechaCreacion;
 
     @Schema(

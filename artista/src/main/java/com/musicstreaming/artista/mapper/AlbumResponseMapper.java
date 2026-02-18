@@ -13,7 +13,7 @@ public interface AlbumResponseMapper {
 
     @Mapping(target = "idAlbum", source = "id")
     @Mapping(target = "idArtista", source = "artistaAlbum.id")
-    @Mapping(target = "fechaCreacion", ignore = true) // la seteas manualmente en el service
+    @Mapping(target = "fechaCreacion", expression = "java(album.getFechaCreacion() != null ? album.getFechaCreacion().toString() : null)")
     AlbumResponse toResponse(Album album);
 
     List<AlbumResponse> listAlbumToListAlbumResponse(List<Album> albums);

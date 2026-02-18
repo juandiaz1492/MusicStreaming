@@ -3,6 +3,7 @@ package com.musicstreaming.artista.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+
 import java.util.Set;
 
 @Data
@@ -26,4 +27,8 @@ public class CancionResponse {
     
     @Schema(example = "[5,9]")
     private Set<Long> artistIds;
+
+    @Schema(example = "[5,9]")
+    private Set<Long> generosIds; 
+
 }
