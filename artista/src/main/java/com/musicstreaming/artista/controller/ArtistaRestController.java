@@ -39,6 +39,12 @@ public class ArtistaRestController {
         return serviciosArtista.findAll(); 
     }
 
+    @Operation(summary = "devuelve todos los artistas")
+    @GetMapping("/findAll/{id}")
+    public ResponseEntity<?> findAllArtista(@PathVariable long id) {
+        return serviciosArtista.findAllArtista(id); 
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getbyId(@PathVariable long id) {
         return serviciosArtista.getbyId(id); 

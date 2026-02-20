@@ -4,16 +4,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.musicstreaming.artista.dto.CancionResponse;
 import com.musicstreaming.artista.dto.GeneroRequest;
 import com.musicstreaming.artista.dto.GeneroResponse;
+
 import com.musicstreaming.artista.entities.Cancion;
 import com.musicstreaming.artista.entities.Genero;
+import com.musicstreaming.artista.exceptions.DuplicateGeneroException;
+import com.musicstreaming.artista.mapper.CancionResponseMapper;
 import com.musicstreaming.artista.mapper.GeneroRequestMapper;
 import com.musicstreaming.artista.mapper.GeneroResponseMapper;
 import com.musicstreaming.artista.repository.GeneroRepository;
@@ -24,13 +27,16 @@ public class ServiciosGenero {
     private final GeneroRepository generoRepository;
     private final GeneroRequestMapper generoRequestMapper;
     private final GeneroResponseMapper generoResponseMapper;
+    private final CancionResponseMapper cancionResponseMapper;
 
     public ServiciosGenero(GeneroRepository generoRepository,
             GeneroRequestMapper generoRequestMapper,
-            GeneroResponseMapper generoResponseMapper) {
+            GeneroResponseMapper generoResponseMapper,
+            CancionResponseMapper cancionResponseMapper) {
         this.generoRepository = generoRepository;
         this.generoRequestMapper = generoRequestMapper;
         this.generoResponseMapper = generoResponseMapper;
+        this.cancionResponseMapper = cancionResponseMapper;
     }
 
     // find all
@@ -46,6 +52,19 @@ public class ServiciosGenero {
         return ResponseEntity.ok(response);
     }
 
+    // find all
+    public ResponseEntity<?> findAllCanciones(Long id) {
+        Optional<Genero> generoOpt = generoRepository.findById(id);
+
+        if (generoOpt.isPresent()) {
+            List<Cancion> canciones = generoOpt.get().getCanciones();
+            List<CancionResponse> responses = cancionResponseMapper.toResponseList(canciones);
+            return ResponseEntity.ok(responses);
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
     // find by {id}
     public ResponseEntity<?> getById(Long id) {
         Optional<Genero> genero = generoRepository.findById(id);
@@ -59,6 +78,11 @@ public class ServiciosGenero {
 
     // post añadir
     public ResponseEntity<?> postGenero(GeneroRequest input) {
+        //excepción mismo nombre
+        String nombre = input.getNombre().trim();
+        if (generoRepository.existsByNombre(nombre)) {
+            throw new DuplicateGeneroException("Ya existe un género con ese nombre");
+        }
 
         Genero genero = generoRequestMapper.toEntity(input);
         Genero save = generoRepository.save(genero);
@@ -97,8 +121,8 @@ public class ServiciosGenero {
 
         if (g == null) {
             return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body("Genero no encontrado con id: " + id);
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("Genero no encontrado con id: " + id);
         }
 
         // Romper relación N-N

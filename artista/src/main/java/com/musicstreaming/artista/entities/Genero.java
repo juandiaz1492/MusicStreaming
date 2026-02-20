@@ -8,9 +8,11 @@ import lombok.Data;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
-@Table(name = "generos")
 @Data
 @Schema(name = "Genero", description = "Modelo que representa un género musical")
+@Table(name = "generos", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_generos_name", columnNames = "nombre"),
+})
 public class Genero {
 
     @Id
@@ -22,7 +24,7 @@ public class Genero {
     private String nombre;
 
     @Schema(example = "Género musical urbano originado en Puerto Rico", requiredMode = Schema.RequiredMode.REQUIRED)
-    @Column(nullable = false, length = 1000)
+    @Column(length = 1000)
     private String descripcion;
 
     @Schema(example = "1990", requiredMode = Schema.RequiredMode.REQUIRED)

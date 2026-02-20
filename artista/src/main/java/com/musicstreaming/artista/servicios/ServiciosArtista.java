@@ -18,9 +18,13 @@ import org.springframework.web.client.RestClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.musicstreaming.artista.dto.ArtistRequest;
 import com.musicstreaming.artista.dto.ArtistResponse;
+import com.musicstreaming.artista.dto.CancionResponse;
+
 import com.musicstreaming.artista.entities.Artista;
+import com.musicstreaming.artista.entities.Cancion;
 import com.musicstreaming.artista.mapper.ArtistRequestMapper;
 import com.musicstreaming.artista.mapper.ArtistResponseMapper;
+import com.musicstreaming.artista.mapper.CancionResponseMapper;
 import com.musicstreaming.artista.repository.ArtistaRepository;
 
 import jakarta.validation.Valid;
@@ -33,12 +37,19 @@ public class ServiciosArtista {
     ArtistaRepository artistaRepository;
 
     @Autowired
+    KeycloakTokenService KeycloakTokenService; 
+    
+    @Autowired
     ArtistRequestMapper artistRequestMapper;
 
     @Autowired
     ArtistResponseMapper artistResponseMapper;
 
+    @Autowired
+    CancionResponseMapper cancionResponseMapper;  
+
     private final RestClient restClient;
+    
 
     public ServiciosArtista(RestClient restClient) {
         this.restClient = restClient;
@@ -56,6 +67,18 @@ public class ServiciosArtista {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(artistaseResponses);
+    }
+
+    public ResponseEntity<?> findAllArtista(Long id) {
+        Optional<Artista> artistaOpt = artistaRepository.findById(id);
+
+        if (artistaOpt.isPresent()) {
+            List<Cancion> canciones = artistaOpt.get().getCanciones();
+            List<CancionResponse> responses = cancionResponseMapper.toResponseList(canciones);   
+            return ResponseEntity.ok(responses);
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     public ResponseEntity<?> getbyId(long id) {
@@ -92,21 +115,23 @@ public class ServiciosArtista {
 
     private boolean comprobarSiExisteUser(String nombreUser) {
         try {
-            JsonNode body = restClient.get()
-                    .uri(userServiceUrl + "/nombre/{nombreUser}", nombreUser)
-                    .retrieve()
-                    .body(JsonNode.class);
+        String token = KeycloakTokenService.getToken(); 
 
-            return body != null
-                    && body.hasNonNull("name")
-                    && nombreUser.equals(body.get("name").asText());
+        JsonNode body = restClient.get()
+                .uri(userServiceUrl + "/nombre/{nombreUser}", nombreUser) // porque userServiceUrl ya es .../user
+                .header(org.springframework.http.HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .retrieve()
+                .body(JsonNode.class);
 
-        } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
-            return false; // usuario no existe
-        } catch (org.springframework.web.client.RestClientResponseException e) {
-            // cualquier otro error 4xx/5xx del microservicio user
-            return false;
-        }
+        return body != null
+                && body.hasNonNull("name")
+                && nombreUser.equals(body.get("name").asText());
+
+    } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+        return false;
+    } catch (org.springframework.web.client.RestClientResponseException e) {
+        return false;
+    }
     }
 
     public ResponseEntity<?> updateArtista(Long id, ArtistRequest inputArtista) {

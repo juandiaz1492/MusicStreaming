@@ -8,6 +8,8 @@ import com.musicstreaming.artista.servicios.ServiciosGenero;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+
 
 @Tag(name = "Género API")
 @RestController
@@ -26,19 +28,25 @@ public class GeneroRestController {
         return serviciosGenero.findAll();
     }
 
+    @Operation(summary = "Devuelve todos las canciones de un genero")
+    @GetMapping("/findAll{id}")
+    public ResponseEntity<?> findAllCanciones(@PathVariable Long id) {
+        return serviciosGenero.findAllCanciones(id);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         return serviciosGenero.getById(id);
     }
 
     @PostMapping("/anadir")
-    public ResponseEntity<?> postGenero(@RequestBody GeneroRequest input) {
+    public ResponseEntity<?> postGenero(@Valid @RequestBody GeneroRequest input) {
         return serviciosGenero.postGenero(input);
     }
 
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> updateGenero(@PathVariable Long id,
-                                          @RequestBody GeneroRequest input) {
+                                          @Valid @RequestBody GeneroRequest input) {
         return serviciosGenero.updateGenero(id, input);
     }
 

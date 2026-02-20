@@ -29,6 +29,12 @@ public class AlbumRestController {
         return serviciosAlbum.findAll();
     }
 
+    @Operation(summary = "devuelve todos las canciones de un album")
+    @GetMapping("/findAll/{id}")
+    public ResponseEntity<?> findAllAlbum(@PathVariable long id) {
+        return serviciosAlbum.findAllAlbum(id);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getbyId(@PathVariable long id) {
         return serviciosAlbum.getbyId(id);

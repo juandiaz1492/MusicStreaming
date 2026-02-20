@@ -23,7 +23,7 @@ public class CancionRestController {
         this.serviciosCancion = serviciosCancion;
     }
 
-    @Operation(summary = "devuelve todas las canciones")
+    @Operation(summary = "devuelve todos los géneros")
     @GetMapping("/findAll")
     public ResponseEntity<?> findAll() {
         return serviciosCancion.findAll();

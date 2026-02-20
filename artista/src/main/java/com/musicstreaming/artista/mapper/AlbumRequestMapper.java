@@ -12,6 +12,6 @@ public interface AlbumRequestMapper {
     
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "artistaAlbum", ignore = true)   // se setea en el service
-    @Mapping(target = "fechaCreacion", ignore = true)  // se parsea en el service
+    @Mapping(target = "canciones", ignore = true)   // se setea en el service
     Album toEntity(AlbumRequest request);
 }

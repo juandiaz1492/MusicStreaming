@@ -1,6 +1,8 @@
 package com.musicstreaming.controller;
 
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
@@ -14,19 +16,38 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.musicstreaming.dto.LoginRequest;
 import com.musicstreaming.dto.UserRequest;
+import com.musicstreaming.servicios.KeyCloakLoginService;
 import com.musicstreaming.servicios.ServiciosControladorUser;
 
 
 @RestController
 @RequestMapping("/user")
 public class UserRestController {
+    @Autowired
+    private final KeyCloakLoginService keyCloakLoginService; 
 
     @Autowired
     private ServiciosControladorUser serviciosControladorUser; 
 
-    private Environment env; 
+    private Environment env;
+
+    UserRestController(KeyCloakLoginService keycloakLoginService) {
+        this.keyCloakLoginService = keycloakLoginService;
+    } 
      
+    @PostMapping("/login")
+public Map<String, String> login(@RequestBody LoginRequest request) {
+
+    String token = keyCloakLoginService.login(request);
+
+    return Map.of(
+            "tokenType", "Bearer",
+            "token", token
+    );
+}
+
     @GetMapping("/check")
     public String check() {
         return "Tu propiedad es: "+ env.getProperty("spring.profiles.active"); 

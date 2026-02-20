@@ -6,5 +6,5 @@ import com.musicstreaming.artista.entities.Album;
 
 
 public interface AlbumRepository extends JpaRepository<Album, Long>{
-
+    boolean existsByNombre(String nombre);
 }

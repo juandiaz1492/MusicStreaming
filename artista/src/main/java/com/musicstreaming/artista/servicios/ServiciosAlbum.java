@@ -5,15 +5,20 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.musicstreaming.artista.dto.AlbumRequest;
 import com.musicstreaming.artista.dto.AlbumResponse;
+import com.musicstreaming.artista.dto.CancionResponse;
 import com.musicstreaming.artista.entities.Album;
 import com.musicstreaming.artista.entities.Artista;
+import com.musicstreaming.artista.entities.Cancion;
+import com.musicstreaming.artista.exceptions.DuplicateAlbumException;
 import com.musicstreaming.artista.mapper.AlbumRequestMapper;
 import com.musicstreaming.artista.mapper.AlbumResponseMapper;
+import com.musicstreaming.artista.mapper.CancionResponseMapper;
 import com.musicstreaming.artista.repository.AlbumRepository;
 import com.musicstreaming.artista.repository.ArtistaRepository;
 
@@ -26,15 +31,18 @@ public class ServiciosAlbum {
     private final AlbumRequestMapper albumRequestMapper;
     private final AlbumResponseMapper albumResponseMapper;
     private final ArtistaRepository artistaRepository;
+    private final CancionResponseMapper cancionResponseMapper; 
 
     public ServiciosAlbum(AlbumRepository albumRepository,
             AlbumRequestMapper albumRequestMapper,
             AlbumResponseMapper albumResponseMapper,
-            ArtistaRepository artistaRepository) {
+            ArtistaRepository artistaRepository, 
+            CancionResponseMapper cancionResponseMapper) {
         this.albumRepository = albumRepository;
         this.artistaRepository = artistaRepository;
         this.albumRequestMapper = albumRequestMapper;
         this.albumResponseMapper = albumResponseMapper;
+        this.cancionResponseMapper = cancionResponseMapper; 
     }
 
     // find all
@@ -48,6 +56,20 @@ public class ServiciosAlbum {
         }
 
         return ResponseEntity.ok(responses);
+    }
+
+     // find all
+    public ResponseEntity<?> findAllAlbum(Long id) {
+
+        Optional<Album> albumOpt = albumRepository.findById(id);
+
+        if (albumOpt.isPresent()) {
+            List<Cancion> canciones = albumOpt.get().getCanciones();
+            List<CancionResponse> responses = cancionResponseMapper.toResponseList(canciones);   
+            return ResponseEntity.ok(responses);
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     // getby id
@@ -73,6 +95,12 @@ public class ServiciosAlbum {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No existe el artista " + input.getIdArtista());
             
         }
+
+        //comprobar que no esta repetido el nombre del albúm y tratar excepción precisa
+        if (albumRepository.existsByNombre(input.getNombre())) {
+            throw new DuplicateAlbumException("Ya existe un álbum con ese nombre");
+        }
+
 
         Album album = albumRequestMapper.toEntity(input);
 
@@ -105,6 +133,7 @@ public class ServiciosAlbum {
             
         }
 
+    
         Optional<Artista> artistaOpt = artistaRepository.findById(inputAlbum.getIdArtista());
 
         if (artistaOpt.isEmpty()) {
@@ -116,15 +145,26 @@ public class ServiciosAlbum {
 
         Album input = albumRequestMapper.toEntity(inputAlbum);
 
+
+        //nombre
         album.setNombre(input.getNombre());
+    
+        //precio
         album.setPrecio(input.getPrecio());
-        album.setFechaCreacion(inputAlbum.getFechaCreacion());
+    
+    
+        //album puede ser null
+        if(input.getFechaCreacion()!= null){
+            album.setFechaCreacion(input.getFechaCreacion());
+        }else{
+            album.setFechaCreacion(null);
+        }        
+
         album.setArtistaAlbum(artistaOpt.get());
 
         Album actualizado = albumRepository.save(album);
 
         AlbumResponse response = albumResponseMapper.toResponse(actualizado);
-        response.setFechaCreacion(actualizado.getFechaCreacion().toString());
 
         return ResponseEntity.ok(response);
     }

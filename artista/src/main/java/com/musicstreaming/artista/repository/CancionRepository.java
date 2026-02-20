@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.musicstreaming.artista.entities.Cancion;
 
-public interface CancionRepository  extends JpaRepository<Cancion, Long>{
+public interface CancionRepository extends JpaRepository<Cancion, Long> {
+    boolean existsByTitle(String title);
 
+    boolean existsByUrl(String url);
 }

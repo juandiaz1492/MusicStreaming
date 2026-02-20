@@ -16,6 +16,8 @@ import com.musicstreaming.artista.entities.Album;
 import com.musicstreaming.artista.entities.Artista;
 import com.musicstreaming.artista.entities.Cancion;
 import com.musicstreaming.artista.entities.Genero;
+import com.musicstreaming.artista.exceptions.AlbumNotFoundException;
+import com.musicstreaming.artista.exceptions.DuplicateCancionException;
 import com.musicstreaming.artista.mapper.CancionRequestMapper;
 import com.musicstreaming.artista.mapper.CancionResponseMapper;
 import com.musicstreaming.artista.repository.AlbumRepository;
@@ -23,7 +25,6 @@ import com.musicstreaming.artista.repository.ArtistaRepository;
 import com.musicstreaming.artista.repository.CancionRepository;
 import com.musicstreaming.artista.repository.GeneroRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -75,14 +76,12 @@ public class ServiciosCancion {
     }
 
     public ResponseEntity<?> postCancion(CancionRequest input) {
-        Album album = null; 
+        Album album = null;
+
         // Album NO TIENE PQ existir
         if (input.getAlbumId() != null) {
-
             album = albumRepository.findById(input.getAlbumId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "No existe el álbum con id " + input.getAlbumId()));
-
+                    .orElseThrow(() -> new AlbumNotFoundException(input.getAlbumId()));
         }
 
         // Géneros deben existir TODOS
@@ -110,6 +109,18 @@ public class ServiciosCancion {
         if (!foundArtistIds.equals(requestedArtistIds)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("No existen los artistas con id(s): " + requestedArtistIds);
+        }
+
+        // comprobar que url y title son unicos
+        String title = input.getTitle().trim();
+
+        if (cancionRepository.existsByTitle(title)) {
+            throw new DuplicateCancionException("Ya existe una canción con ese título");
+        }
+
+        if (input.getUrl() != null && !input.getUrl().isBlank()
+                && cancionRepository.existsByUrl(input.getUrl().trim())) {
+            throw new DuplicateCancionException("Ya existe una canción con esa URL");
         }
 
         // Crear Cancion
@@ -146,6 +157,8 @@ public class ServiciosCancion {
                         .body("No existe el álbum con id " + inputCancion.getAlbumId());
             }
             song.setAlbum(album);
+        } else {
+            song.setAlbum(null);
         }
 
         // ===== Campos simples (si vienen) =====
@@ -154,9 +167,15 @@ public class ServiciosCancion {
 
         if (inputCancion.getDuration() != null)
             song.setDuration(inputCancion.getDuration());
+        else {
+            song.setDuration(null);
+        }
 
         if (inputCancion.getUrl() != null)
             song.setUrl(inputCancion.getUrl());
+        else {
+            song.setUrl(null);
+        }
 
         // ===== Géneros (si vienen) =====
         if (inputCancion.getGenerosIds() != null) {
